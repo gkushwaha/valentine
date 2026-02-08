@@ -34,6 +34,20 @@
       display: grid;
       place-items: center;
       overflow: hidden;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600'><g fill='none' stroke='none'><circle cx='300' cy='330' r='150' fill='%23f2c6a0'/><circle cx='190' cy='220' r='70' fill='%23f2c6a0'/><circle cx='410' cy='220' r='70' fill='%23f2c6a0'/><circle cx='300' cy='260' r='90' fill='%23e7b58c'/><circle cx='270' cy='250' r='18' fill='%233b1d2a'/><circle cx='330' cy='250' r='18' fill='%233b1d2a'/><ellipse cx='300' cy='295' rx='28' ry='22' fill='%23d99c7a'/><path d='M275 310 Q300 330 325 310' stroke='%233b1d2a' stroke-width='8' fill='none' stroke-linecap='round'/></g></svg>");
+      background-repeat: no-repeat;
+      background-position: right 8% bottom 6%;
+      background-size: min(40vmin, 320px);
+      opacity: 0.25;
+      pointer-events: none;
+      z-index: 0;
     }
 
     .floaters {
@@ -41,6 +55,7 @@
       inset: 0;
       pointer-events: none;
       opacity: 0.6;
+      z-index: 1;
     }
 
     .floater {
@@ -71,6 +86,7 @@
       box-shadow: 0 20px 60px var(--shadow);
       border: 2px solid #ffd3e1;
       text-align: center;
+      z-index: 2;
     }
 
     h1 {
@@ -170,6 +186,31 @@
       min-height: 1.6em;
     }
 
+    .fireworks {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 10;
+    }
+
+    .spark {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      opacity: 0;
+      animation: pop 1200ms ease-out forwards;
+      box-shadow: 0 0 18px currentColor, 0 0 40px currentColor;
+      filter: saturate(1.2);
+    }
+
+    @keyframes pop {
+      0% { transform: translate(0, 0) scale(0.2); opacity: 0; }
+      10% { opacity: 1; }
+      100% { transform: translate(var(--dx), var(--dy)) scale(1.15); opacity: 0; }
+    }
+
     @media (max-width: 480px) {
       .card { padding: 36px 22px 44px; }
       .buttons { height: 170px; }
@@ -185,6 +226,7 @@
 
   <div class="card" id="card">
     <div class="hearts" id="hearts"></div>
+    <div class="fireworks" id="fireworks"></div>
     <h1>Will you be my Valentine, Alina Kushwaha?</h1>
     <p class="sub">&nbsp;</p>
 
@@ -203,6 +245,7 @@
     const message = document.getElementById('message');
     const buttonsArea = document.getElementById('buttonsArea');
     const hearts = document.getElementById('hearts');
+    const fireworks = document.getElementById('fireworks');
 
     let bounds;
 
@@ -238,6 +281,32 @@
       setTimeout(() => h.remove(), 6000);
     };
 
+    const launchFireworks = () => {
+      const colors = ['#ff004c', '#ff7a00', '#ffd500', '#00e5ff', '#7c4dff', '#00ff85', '#ff3bd4'];
+      const bursts = 8;
+      const sparksPerBurst = 34;
+      for (let b = 0; b < bursts; b++) {
+        const cx = rand(5, 95);
+        const cy = rand(5, 85);
+        for (let i = 0; i < sparksPerBurst; i++) {
+          const s = document.createElement('div');
+          s.className = 'spark';
+          s.style.left = `${cx}%`;
+          s.style.top = `${cy}%`;
+          s.style.color = colors[Math.floor(rand(0, colors.length))];
+          const angle = rand(0, Math.PI * 2);
+          const distance = rand(90, 260);
+          const dx = Math.cos(angle) * distance;
+          const dy = Math.sin(angle) * distance;
+          s.style.setProperty('--dx', `${dx}px`);
+          s.style.setProperty('--dy', `${dy}px`);
+          s.style.animationDelay = `${rand(0, 0.2)}s`;
+          fireworks.appendChild(s);
+          setTimeout(() => s.remove(), 1300);
+        }
+      }
+    };
+
     const heartTimer = setInterval(spawnHeart, 900);
 
     ['mousemove', 'touchstart', 'click'].forEach((evt) => {
@@ -250,6 +319,15 @@
     yesBtn.addEventListener('click', () => {
       clearInterval(heartTimer);
       message.textContent = 'Yay! You just made my heart do a little happy dance.';
+      launchFireworks();
+      const endTime = Date.now() + 20000;
+      const fireworksTimer = setInterval(() => {
+        if (Date.now() > endTime) {
+          clearInterval(fireworksTimer);
+          return;
+        }
+        launchFireworks();
+      }, 600);
       yesBtn.style.position = 'static';
       yesBtn.style.transform = 'none';
       noBtn.style.display = 'none';
